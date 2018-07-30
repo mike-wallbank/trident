@@ -1,0 +1,227 @@
+// Do NOT change. Changes will be lost next time file is generated
+
+#define R__DICTIONARY_FILENAME dIdunedIappdIusersdIwallbankdItridentdItrident_mumu_C_ACLiC_dict
+
+/*******************************************************************/
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#define G__DICTIONARY
+#include "RConfig.h"
+#include "TClass.h"
+#include "TDictAttributeMap.h"
+#include "TInterpreter.h"
+#include "TROOT.h"
+#include "TBuffer.h"
+#include "TMemberInspector.h"
+#include "TInterpreter.h"
+#include "TVirtualMutex.h"
+#include "TError.h"
+
+#ifndef G__ROOT
+#define G__ROOT
+#endif
+
+#include "RtypesImp.h"
+#include "TIsAProxy.h"
+#include "TFileMergeInfo.h"
+#include <algorithm>
+#include "TCollectionProxyInfo.h"
+/*******************************************************************/
+
+#include "TDataMember.h"
+
+// Since CINT ignores the std namespace, we need to do so in this file.
+namespace std {} using namespace std;
+
+// Header files passed as explicit arguments
+#include "/dune/app/users/wallbank/trident/./trident_mumu.C"
+
+// Header files passed via #pragma extra_include
+
+namespace ROOT {
+   static TClass *TridentMuMu_Dictionary();
+   static void TridentMuMu_TClassManip(TClass*);
+   static void *new_TridentMuMu(void *p = 0);
+   static void *newArray_TridentMuMu(Long_t size, void *p);
+   static void delete_TridentMuMu(void *p);
+   static void deleteArray_TridentMuMu(void *p);
+   static void destruct_TridentMuMu(void *p);
+
+   // Function generating the singleton type initializer
+   static TGenericClassInfo *GenerateInitInstanceLocal(const ::TridentMuMu*)
+   {
+      ::TridentMuMu *ptr = 0;
+      static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(::TridentMuMu));
+      static ::ROOT::TGenericClassInfo 
+         instance("TridentMuMu", "trident_mumu.C", 55,
+                  typeid(::TridentMuMu), ::ROOT::Internal::DefineBehavior(ptr, ptr),
+                  &TridentMuMu_Dictionary, isa_proxy, 4,
+                  sizeof(::TridentMuMu) );
+      instance.SetNew(&new_TridentMuMu);
+      instance.SetNewArray(&newArray_TridentMuMu);
+      instance.SetDelete(&delete_TridentMuMu);
+      instance.SetDeleteArray(&deleteArray_TridentMuMu);
+      instance.SetDestructor(&destruct_TridentMuMu);
+      return &instance;
+   }
+   TGenericClassInfo *GenerateInitInstance(const ::TridentMuMu*)
+   {
+      return GenerateInitInstanceLocal((::TridentMuMu*)0);
+   }
+   // Static variable to force the class initialization
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal((const ::TridentMuMu*)0x0); R__UseDummy(_R__UNIQUE_DICT_(Init));
+
+   // Dictionary for non-ClassDef classes
+   static TClass *TridentMuMu_Dictionary() {
+      TClass* theClass =::ROOT::GenerateInitInstanceLocal((const ::TridentMuMu*)0x0)->GetClass();
+      TridentMuMu_TClassManip(theClass);
+   return theClass;
+   }
+
+   static void TridentMuMu_TClassManip(TClass* theClass){
+      theClass->CreateAttributeMap();
+      TDictAttributeMap* attrMap( theClass->GetAttributeMap() );
+      attrMap->AddProperty("file_name","/dune/app/users/wallbank/trident/./trident_mumu.C");
+   }
+
+} // end of namespace ROOT
+
+namespace ROOT {
+   // Wrappers around operator new
+   static void *new_TridentMuMu(void *p) {
+      return  p ? new(p) ::TridentMuMu : new ::TridentMuMu;
+   }
+   static void *newArray_TridentMuMu(Long_t nElements, void *p) {
+      return p ? new(p) ::TridentMuMu[nElements] : new ::TridentMuMu[nElements];
+   }
+   // Wrapper around operator delete
+   static void delete_TridentMuMu(void *p) {
+      delete ((::TridentMuMu*)p);
+   }
+   static void deleteArray_TridentMuMu(void *p) {
+      delete [] ((::TridentMuMu*)p);
+   }
+   static void destruct_TridentMuMu(void *p) {
+      typedef ::TridentMuMu current_t;
+      ((current_t*)p)->~current_t();
+   }
+} // end of namespace ROOT for class ::TridentMuMu
+
+namespace ROOT {
+   static TClass *vectorlEParticlegR_Dictionary();
+   static void vectorlEParticlegR_TClassManip(TClass*);
+   static void *new_vectorlEParticlegR(void *p = 0);
+   static void *newArray_vectorlEParticlegR(Long_t size, void *p);
+   static void delete_vectorlEParticlegR(void *p);
+   static void deleteArray_vectorlEParticlegR(void *p);
+   static void destruct_vectorlEParticlegR(void *p);
+
+   // Function generating the singleton type initializer
+   static TGenericClassInfo *GenerateInitInstanceLocal(const vector<Particle>*)
+   {
+      vector<Particle> *ptr = 0;
+      static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(vector<Particle>));
+      static ::ROOT::TGenericClassInfo 
+         instance("vector<Particle>", -2, "vector", 214,
+                  typeid(vector<Particle>), ::ROOT::Internal::DefineBehavior(ptr, ptr),
+                  &vectorlEParticlegR_Dictionary, isa_proxy, 0,
+                  sizeof(vector<Particle>) );
+      instance.SetNew(&new_vectorlEParticlegR);
+      instance.SetNewArray(&newArray_vectorlEParticlegR);
+      instance.SetDelete(&delete_vectorlEParticlegR);
+      instance.SetDeleteArray(&deleteArray_vectorlEParticlegR);
+      instance.SetDestructor(&destruct_vectorlEParticlegR);
+      instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<Particle> >()));
+      return &instance;
+   }
+   // Static variable to force the class initialization
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal((const vector<Particle>*)0x0); R__UseDummy(_R__UNIQUE_DICT_(Init));
+
+   // Dictionary for non-ClassDef classes
+   static TClass *vectorlEParticlegR_Dictionary() {
+      TClass* theClass =::ROOT::GenerateInitInstanceLocal((const vector<Particle>*)0x0)->GetClass();
+      vectorlEParticlegR_TClassManip(theClass);
+   return theClass;
+   }
+
+   static void vectorlEParticlegR_TClassManip(TClass* ){
+   }
+
+} // end of namespace ROOT
+
+namespace ROOT {
+   // Wrappers around operator new
+   static void *new_vectorlEParticlegR(void *p) {
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<Particle> : new vector<Particle>;
+   }
+   static void *newArray_vectorlEParticlegR(Long_t nElements, void *p) {
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<Particle>[nElements] : new vector<Particle>[nElements];
+   }
+   // Wrapper around operator delete
+   static void delete_vectorlEParticlegR(void *p) {
+      delete ((vector<Particle>*)p);
+   }
+   static void deleteArray_vectorlEParticlegR(void *p) {
+      delete [] ((vector<Particle>*)p);
+   }
+   static void destruct_vectorlEParticlegR(void *p) {
+      typedef vector<Particle> current_t;
+      ((current_t*)p)->~current_t();
+   }
+} // end of namespace ROOT for class vector<Particle>
+
+namespace ROOT {
+   static TClass *maplEdoublecOParticlegR_Dictionary();
+   static void maplEdoublecOParticlegR_TClassManip(TClass*);
+   static void *new_maplEdoublecOParticlegR(void *p = 0);
+   static void *newArray_maplEdoublecOParticlegR(Long_t size, void *p);
+   static void delete_maplEdoublecOParticlegR(void *p);
+   static void deleteArray_maplEdoublecOParticlegR(void *p);
+   static void destruct_maplEdoublecOParticlegR(void *p);
+
+   // Function generating the singleton type initializer
+   static TGenericClassInfo *GenerateInitInstanceLocal(const map<double,Particle>*)
+   {
+      map<double,Particle> *ptr = 0;
+      static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(map<double,Particle>));
+      static ::ROOT::TGenericClassInfo 
+         instance("map<double,Particle>", -2, "map", 96,
+                  typeid(map<double,Particle>), ::ROOT::Internal::DefineBehavior(ptr, ptr),
+                  &maplEdoublecOParticlegR_Dictionary, isa_proxy, 0,
+                  sizeof(map<double,Particle>) );
+      instance.SetNew(&new_maplEdoublecOParticlegR);
+      instance.SetNewArray(&newArray_maplEdoublecOParticlegR);
+      instance.SetDelete(&delete_maplEdoublecOParticlegR);
+      instance.SetDeleteArray(&deleteArray_maplEdoublecOParticlegR);
+      instance.SetDestructor(&destruct_maplEdoublecOParticlegR);
+      instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::MapInsert< map<double,Particle> >()));
+      return &instance;
+   }
+   // Static variable to force the class initialization
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal((const map<double,Particle>*)0x0); R__UseDummy(_R__UNIQUE_DICT_(Init));
+
+   // Dictionary for non-ClassDef classes
+   static TClass *maplEdoublecOParticlegR_Dictionary() {
+      TClass* theClass =::ROOT::GenerateInitInstanceLocal((const map<double,Particle>*)0x0)->GetClass();
+      maplEdoublecOParticlegR_TClassManip(theClass);
+   return theClass;
+   }
+
+   static void maplEdoublecOParticlegR_TClassManip(TClass* ){
+   }
+
+} // end of namespace ROOT
+
+namespace ROOT {
+   // Wrappers around operator new
+   static void *new_maplEdoublecOParticlegR(void *p) {
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) map<double,Particle> : new map<double,Particle>;
+   }
+   static void *newArray_maplEdoublecOParticlegR(Long_t nElements, void *p) {
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) map<double,Particle>[nElements] : new map<double,Particle>[nElements];
+   }
+   // Wrapper around operator delete
+   static void delete_maplEdoublecOParticlegR

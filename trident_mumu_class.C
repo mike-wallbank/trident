@@ -35,12 +35,11 @@ R__LOAD_LIBRARY(Particle_cxx.so);
 #include "TTree.h"
 #include "TChain.h"
 #include "TMath.h"
-#include "TObjArray.h"
 #include "TVector3.h"
 #include "TH1D.h"
 #include "TH2D.h"
-#include "TProfile.h"
 #include "TGraph.h"
+#include "TObjArray.g"
 
 // framework
 #include "Particle.h"
@@ -50,7 +49,7 @@ R__LOAD_LIBRARY(Particle_cxx.so);
 #include "dunend/src/Event.h"
 
 const int kMaxParticles = 1000;
-const bool kMakeMonitorHists = false;
+const bool kMakeMonitorHists = true;
 
 class TridentMuMu {
 public:
@@ -60,17 +59,14 @@ public:
   void AddNu(Particle nu);
   void AddMuPlus(Particle mu);
   void AddMuMinus(Particle mu);
-  void AddTrack(Particle track);
+  void AddIdentifiedMu(Particle mu);
   double GetEventEnergy();
-  int GetEventNumber();
-  TVector3 GetEventVertex();
   double GetVertexActivity();
-  double GetVertexFraction();
   Particle GetNu();
   Particle GetMuPlus();
   Particle GetMuMinus();
-  Particle GetTrack(int track);
-  std::vector<Particle> GetTracks();
+  Particle GetMu(int mu);
+  std::vector<Particle> GetIdentifiedMus();
   std::pair<Particle, Particle> GetCandidateMus();
   double MuonAngle();
   double MuonStartSep();
@@ -78,32 +74,24 @@ public:
   double MuonParticleSep();
   int NumMuPlus();
   int NumMuMinus();
-  int NumTracks();
+  int NumIdentifiedMus();
   void SetEventEnergy(double energy);
-  void SetEventNumber(int event);
-  void SetEventVertex(TVector3 vertex);
   void SetVertexActivity(double energy);
-  void SetVertexFraction(double vertexFraction);
 
 private:
 
-  int fEventNumber;
   double fEventEnergy;
   double fVertexActivity;
-  double fVertexFraction;
-  TVector3 fEventVertex;
   Particle fNu;
   Particle fMuPlus;
   Particle fMuMinus;
-  std::vector<Particle> fTracks;
+  std::vector<Particle> fIdentifiedMus;
   std::map<double,Particle> fMuMap;
 
 };
 
 TridentMuMu::TridentMuMu() {
-  fEventNumber = -1;
   fEventEnergy = 0;
-  fEventVertex = TVector3(-9999.,-9999.,-9999.);
   fVertexActivity = 0;
   fNu = Particle();
   fMuPlus = Particle();
@@ -122,29 +110,13 @@ void TridentMuMu::AddMuMinus(Particle mu) {
   fMuMinus = mu;
 }
 
-void TridentMuMu::AddTrack(Particle mu) {
-  fTracks.push_back(mu);
+void TridentMuMu::AddIdentifiedMu(Particle mu) {
+  fIdentifiedMus.push_back(mu);
   fMuMap[mu.Length()] = mu;
 }
 
 double TridentMuMu::GetEventEnergy() {
   return fEventEnergy;
-}
-
-int TridentMuMu::GetEventNumber() {
-  return fEventNumber;
-}
-
-TVector3 TridentMuMu::GetEventVertex() {
-  return fEventVertex;
-}
-
-double TridentMuMu::GetVertexActivity() {
-  return fVertexActivity;
-}
-
-double TridentMuMu::GetVertexFraction() {
-  return fVertexFraction;
 }
 
 Particle TridentMuMu::GetNu() {
@@ -159,14 +131,14 @@ Particle TridentMuMu::GetMuMinus() {
   return fMuMinus;
 }
 
-Particle TridentMuMu::GetTrack(int track) {
-  return fTracks.at(track);
+Particle TridentMuMu::GetMu(int mu) {
+  return fIdentifiedMus.at(mu);
 }
 
 std::pair<Particle, Particle> TridentMuMu::GetCandidateMus() {
   std::pair<Particle, Particle> candidateMus;
-  if (this->NumTracks() < 2) {
-    std::cout << "Warning: trying to obtain candidate muons from fewer than two tracks" << std::endl;
+  if (this->NumIdentifiedMus() < 2) {
+    std::cout << "Warning: trying to obtain candidate muons from fewer than two identified muons" << std::endl;
     return candidateMus;
   }
   candidateMus.first = fMuMap.rbegin()->second;
@@ -174,8 +146,8 @@ std::pair<Particle, Particle> TridentMuMu::GetCandidateMus() {
   return candidateMus;
 }
 
-std::vector<Particle> TridentMuMu::GetTracks() {
-  return fTracks;
+std::vector<Particle> TridentMuMu::GetIdentifiedMus() {
+  return fIdentifiedMus;
 }
 
 double TridentMuMu::MuonAngle() {
@@ -206,28 +178,16 @@ int TridentMuMu::NumMuMinus() {
   return fMuMinus.ID() == -1 ? 0 : 1;
 }
 
-int TridentMuMu::NumTracks() {
-  return fTracks.size();
+int TridentMuMu::NumIdentifiedMus() {
+  return fIdentifiedMus.size();
 }
 
 void TridentMuMu::SetEventEnergy(double energy) {
   fEventEnergy = energy;
 }
 
-void TridentMuMu::SetEventNumber(int event) {
-  fEventNumber = event;
-}
-
-void TridentMuMu::SetEventVertex(TVector3 vertex) {
-  fEventVertex = vertex;
-}
-
 void TridentMuMu::SetVertexActivity(double energy) {
   fVertexActivity = energy;
-}
-
-void TridentMuMu::SetVertexFraction(double vertexFraction) {
-  fVertexFraction = vertexFraction;
 }
 
 std::map<int,std::pair<std::string,int> > PDGMap = {{13,{"#mu",0}},{211,{"#pi",1}},{11,{"e",2}},{2212,{"p",3}},{321,{"K",4}}};
@@ -260,33 +220,13 @@ TVector3 TrackStart(const MCTrack& track);
 /// Returns the end of the track
 TVector3 TrackEnd(const MCTrack& track);
 
-/// Returns the fraction of energy deposited by the track near the vertex
-double TrackVertexFraction(const MCTrack& track, const TVector3& vertex);
-
 /// Write out the event into a TTree for external analysis
 void WriteData(std::string outFile,
 	       const std::map<std::string,std::vector<std::unique_ptr<TridentMuMu> > >& tridents,
 	       TObjArray* monitorHists);
 
 /// Run main function
-void trident_mumu(int n_events = -1,
-		  unsigned int nskip = 0,
-		  bool run_signal = true,
-		  int run_background = -1,
-		  std::string inFilePath = "/pnfs/dune/persistent/users/jmalbos/Trident/data/sim/mumu/",
-		  std::string outFile = "TridentMuMuOut.root") {
-
-  std::cout << std::endl
-	    << "--------------------------------------------------------------------------------------" << std::endl
-	    << "Running trident_mumu:" << std::endl
-	    << "  Number of events: " << n_events << std::endl
-	    << "  Number of events to skip: " << nskip << std::endl
-	    << "  Running signal? " << run_signal << std::endl
-	    << "  Running background files (-1: all): " << run_background << std::endl
-	    << "  Input file path: " << inFilePath << std::endl
-	    << "  Output file name: " << outFile << std::endl
-	    << "--------------------------------------------------------------------------------------" << std::endl
-	    << std::endl;
+void trident_mumu(int n_events = -1, unsigned int nskip = 0, std::string outFile = "TridentMuMuOut.root") {
 
   gStyle->SetOptStat(0);
 
@@ -296,100 +236,73 @@ void trident_mumu(int n_events = -1,
   // gSystem->Load("Particle_cxx");
 
   // Load file and tree
-  TFile* file_sig = nullptr;
-  TTree* tree_sig = nullptr;
-  TChain* tree_bg = nullptr;
-  if (run_signal) {
-    file_sig = new TFile(Form("%s/mumu.sgn.coh.00.g4.root", inFilePath.c_str()), "READ");
-    tree_sig = (TTree*)file_sig->Get("Event");
-  }
-  if (run_background > -2) {
-    tree_bg = new TChain("Event");
-    for (unsigned int bg_file = 0; bg_file < 100; ++bg_file)
-      if (run_background == -1 or (run_background > -1 and bg_file == (unsigned int)run_background))
-	tree_bg->Add(Form("%s/mumu.bkg.%02d.g4.root", inFilePath.c_str(), bg_file));
-  }
+  TFile file_sig("/pnfs/dune/persistent/users/jmalbos/Trident/data/sim/mumu/mumu.coh.sgn.00.g4.root","READ");
+  TTree* tree_sig = (TTree*)file_sig.Get("Event");
+  TChain* tree_bg = new TChain("Event");
+  for (unsigned int bg_file = 0; bg_file < 100; ++bg_file)
+    tree_bg->Add(Form("/pnfs/dune/persistent/users/jmalbos/Trident/data/sim/mumu/mumu.bkg.%02d.g4.root",bg_file));
+  // TFile file_bg("/pnfs/dune/persistent/users/jmalbos/Trident/data/sim/mumu/mumu.bkg.00.root");
+  // TTree* tree_bg = (TTree*)file_bg.Get("Event");
 
-  // Map of trident objects to fill
+  unsigned int sig_events_to_process = n_events == -1 ? tree_sig->GetEntries()
+    : TMath::Min((unsigned int)nskip+n_events, (unsigned int)tree_sig->GetEntries());
+  unsigned int bg_events_to_process = n_events == -1 ? tree_bg->GetEntries()
+    : TMath::Min((unsigned int)nskip+n_events, (unsigned int)tree_bg->GetEntries());
+
   std::map<std::string,std::vector<std::unique_ptr<TridentMuMu> > > allTridents;
-
   // Any histograms to fill
-  TObjArray* monitorHists = nullptr;
+  TObjArray* monitorHists;
   if (kMakeMonitorHists)
     monitorHists = DefineDataProducts();
 
-  // Run the module over signal and background events
-  if (tree_sig != nullptr) {
-    unsigned int sig_events_to_process = n_events == -1 ? tree_sig->GetEntries()
-      : TMath::Min((unsigned int)nskip+n_events, (unsigned int)tree_sig->GetEntries());
-    allTridents["Signal"] = std::move(ProcessEvents(tree_sig, sig_events_to_process, nskip, "Signal", monitorHists));
-  }
-  if (tree_bg != nullptr) {
-    unsigned int bg_events_to_process = n_events == -1 ? tree_bg->GetEntries()
-      : TMath::Min((unsigned int)nskip+n_events, (unsigned int)tree_bg->GetEntries());
-    allTridents["Background"] = std::move(ProcessEvents(tree_bg,  bg_events_to_process, nskip, "Background", monitorHists));
-  }
+  allTridents["Signal"]     = std::move(ProcessEvents(tree_sig, sig_events_to_process, nskip, "Signal", monitorHists));
+  allTridents["Background"] = std::move(ProcessEvents(tree_bg,  bg_events_to_process,  nskip, "Background", monitorHists));
 
   WriteData(outFile, allTridents, monitorHists);
 
-  if (file_sig != nullptr) {
-    if (file_sig->IsOpen())
-      file_sig->Close();
-    delete file_sig;
-  }
-
-  return;
+  file_sig.Close();
+  //file_bg.Close();
 
 }
 
 TObjArray* DefineDataProducts() {
 
   TObjArray* objs = new TObjArray();
-  // TH1D* hTrackLengthSig		= new TH1D("TrackLengthSig",";Track length (mm);",100,0,5000);
-  // TH1D* hTrackEnergySig		= new TH1D("TrackEnergySig",";Track energy (MeV);",100,0,10000);
-  // TH1D* hLongTrackLengthSig	= new TH1D("LongTrackLengthSig",";Track length (mm);",100,0,5000);
-  // TH1D* hLongTrackEnergySig	= new TH1D("LongTrackEnergySig",";Track energy (MeV);",100,0,10000);
-  // TH1D* hShortTrackLengthSig	= new TH1D("ShortTrackLengthSig",";Track length (mm);",100,0,5000);
-  // TH1D* hShortTrackEnergySig	= new TH1D("ShortTrackEnergySig",";Track energy (MeV);",100,0,10000);
-  // TH1D* hTrackLengthBg		= new TH1D("TrackLengthBg",";Track length (mm);",100,0,5000);
-  // TH1D* hTrackEnergyBg		= new TH1D("TrackEnergyBg",";Track energy (MeV);",100,0,10000);
-  // TH1D* hLongTrackLengthBg	= new TH1D("LongTrackLengthBg",";Track length (mm);",100,0,5000);
-  // TH1D* hLongTrackEnergyBg	= new TH1D("LongTrackEnergyBg",";Track energy (MeV);",100,0,10000);
-  // TH1D* hShortTrackLengthBg	= new TH1D("ShortTrackLengthBg",";Track length (mm);",100,0,5000);
-  // TH1D* hShortTrackEnergyBg	= new TH1D("ShortTrackEnergyBg",";Track energy (MeV);",100,0,10000);
-  // TH2D* hVertexActivitySig	= new TH2D("VertexActivitySig",";Distance from vertex (mm);Deposited energy (MeV);",40,0,200,40,0,400);
-  // TH2D* hVertexActivityBg       = new TH2D("VertexActivityBg",";Distance from vertex (mm);Deposited energy (MeV);",40,0,200,40,0,400);
-  // TGraph* gVertexActivitySig	= new TGraph();
-  // gVertexActivitySig->SetName("gVertexActivitySig");
-  // TGraph* gVertexActivityBg	= new TGraph();
-  // gVertexActivityBg->SetName("gVertexActivityBg");
-  TH1D* hVertexEnergySig     = new TH1D("VertexEnergySig",";Distance from vertex (mm);Deposited energy (MeV);",40,0,200);
-  TH1D* hVertexEnergyBg      = new TH1D("VertexEnergyBg",";Distance from vertex (mm);Deposited energy (MeV);",40,0,200);
-  TProfile* hVertexEnergyFracSig = new TProfile("VertexEnergyFracSig",";Distance from vertex (mm);Fraction of event energy",40,0,200,0,1);
-  TProfile* hVertexEnergyFracBg  = new TProfile("VertexEnergyFracBg",";Distance from vertex (mm);Fraction of event energy",40,0,200,0,1);
+  TH1D *hTrackLengthSig		= new TH1D("TrackLengthSig",";Track length (cm);",100,0,500);
+  TH1D *hTrackEnergySig		= new TH1D("TrackEnergySig",";Track energy (MeV);",100,0,1000);
+  TH1D *hLongTrackLengthSig	= new TH1D("LongTrackLengthSig",";Track length (cm);",100,0,500);
+  TH1D *hLongTrackEnergySig	= new TH1D("LongTrackEnergySig",";Track energy (MeV);",100,0,1000);
+  TH1D *hShortTrackLengthSig	= new TH1D("ShortTrackLengthSig",";Track length (cm);",100,0,500);
+  TH1D *hShortTrackEnergySig	= new TH1D("ShortTrackEnergySig",";Track energy (MeV);",100,0,1000);
+  TH1D *hTrackLengthBg		= new TH1D("TrackLengthBg",";Track length (cm);",100,0,500);
+  TH1D *hTrackEnergyBg		= new TH1D("TrackEnergyBg",";Track energy (MeV);",100,0,1000);
+  TH1D *hLongTrackLengthBg	= new TH1D("LongTrackLengthBg",";Track length (cm);",100,0,500);
+  TH1D *hLongTrackEnergyBg	= new TH1D("LongTrackEnergyBg",";Track energy (MeV);",100,0,1000);
+  TH1D *hShortTrackLengthBg	= new TH1D("ShortTrackLengthBg",";Track length (cm);",100,0,500);
+  TH1D *hShortTrackEnergyBg	= new TH1D("ShortTrackEnergyBg",";Track energy (MeV);",100,0,1000);
+  TH2D* hVertexActivitySig	= new TH2D("VertexActivitySig",";Distance from vertex (cm);Deposited energy (MeV);",40,0,20,40,0,400);
+  TH2D* hVertexActivityBg       = new TH2D("VertexActivityBg",";Distance from vertex (cm);Deposited energy (MeV);",40,0,20,40,0,400);
+  TGraph* gVertexActivitySig	= new TGraph();
+  gVertexActivitySig->SetName("VertexActivitySig");
+  TGraph* gVertexActivityBg	= new TGraph();
+  gVertexActivityBg->SetName("VertexActivityBg");
 
-  // objs->Add(hTrackLengthSig);
-  // objs->Add(hTrackEnergySig);
-  // objs->Add(hLongTrackLengthSig);
-  // objs->Add(hLongTrackEnergySig);
-  // objs->Add(hShortTrackLengthSig);
-  // objs->Add(hShortTrackEnergySig);
-  // objs->Add(hTrackLengthBg);
-  // objs->Add(hTrackEnergyBg);
-  // objs->Add(hLongTrackLengthBg);
-  // objs->Add(hLongTrackEnergyBg);
-  // objs->Add(hShortTrackLengthBg);
-  // objs->Add(hShortTrackEnergyBg);
-  // objs->Add(hVertexActivitySig);
-  // objs->Add(hVertexActivityBg);
-  // objs->Add(gVertexActivitySig);
-  // objs->Add(gVertexActivityBg);
-  objs->Add(hVertexEnergySig);
-  objs->Add(hVertexEnergyBg);
-  objs->Add(hVertexEnergyFracSig);
-  objs->Add(hVertexEnergyFracBg);
-
-  return objs;
+  objs->Add(hTrackLengthSig);
+  objs->Add(hTrackEnergySig);
+  objs->Add(hLongTrackLengthSig);
+  objs->Add(hLongTrackEnergySig);
+  objs->Add(hShortTrackLengthSig);
+  objs->Add(hShortTrackEnergySig);
+  objs->Add(hTrackLengthBg);
+  objs->Add(hTrackEnergyBg);
+  objs->Add(hLongTrackLengthBg);
+  objs->Add(hLongTrackEnergyBg);
+  objs->Add(hShortTrackLengthBg);
+  objs->Add(hShortTrackEnergyBg);
+  objs->Add(hVertexActivitySig);
+  objs->Add(hVertexActivityBg);
+  objs->Add(gVertexActivitySig);
+  objs->Add(gVertexActivityBg);
 
 }
 
@@ -405,8 +318,6 @@ std::vector<std::unique_ptr<TridentMuMu> > ProcessEvents(TTree* tree,
 
   std::vector<std::unique_ptr<TridentMuMu> > tridentMuMus;
 
-  const char* fSigLabel = (label == "Signal") ? "Sig" : "Bg";
-
   for (unsigned int event = nskip; event < n_events; ++event) {
 
     if (event % 100 == 0)
@@ -418,95 +329,70 @@ std::vector<std::unique_ptr<TridentMuMu> > ProcessEvents(TTree* tree,
     // Save event information
     std::map<int,Particle*> particleMap;
     std::vector<MCHit> hits;
-    std::map<int, int> particleAncestry;
     double eventEnergy = 0.;
-    TVector3 eventVertex = evt->GetVertexPositionAndTime().Vect();
+    TVector3 eventVertex = TVector3(0,0,0);//evt->Vertex();
 
-    // Look through MCParticles
     for (std::vector<MCParticle>::iterator particleIt = evt->MCParticleContainer.begin();
 	 particleIt != evt->MCParticleContainer.end();
 	 ++particleIt) {
       //particleMap[particleIt->GetMCID()] = Particle(particleIt->GetMCID());
       Particle* particle = new Particle(particleIt->GetMCID());
+      if (eventVertex == TVector3(0,0,0))
+	eventVertex = particleIt->GetInitialPositionAndTime().Vect();
       particle->SetParticleStart(particleIt->GetInitialPositionAndTime().Vect());
       particle->SetPDG(particleIt->GetPDGCode());
-      particle->SetInitialMomentum(particleIt->GetInitialMomentum());
-      particle->SetFinalMomentum(particleIt->GetFinalMomentum());
-      particle->SetDirection(particleIt->GetInitialMomentum().Unit());
+      particle->SetEnergy(10); //particleIt->GetEnergy();
       particle->SetAssociatedTrack(false);
       particleMap[particleIt->GetMCID()] = particle;
-      particleAncestry[particleIt->GetMCID()] = particleIt->GetAncestorID();
     }
-
-    // Look through MCTracks
-    double trackEnergy;
-    std::map<int, double> familyEnergy;
     for (std::vector<MCTrack>::iterator trackIt = evt->MCTrackContainer.begin();
 	 trackIt != evt->MCTrackContainer.end();
 	 ++trackIt) {
-      trackEnergy = TrackDepositedEnergy(*trackIt);
       particleMap[trackIt->GetMCID()]->SetAssociatedTrack(true);
-      particleMap[trackIt->GetMCID()]->SetDepositedEnergy(trackEnergy);
-      particleMap[trackIt->GetMCID()]->SetdEdx(TrackdEdx(*trackIt, 30.));
+      particleMap[trackIt->GetMCID()]->SetDepositedEnergy(TrackDepositedEnergy(*trackIt));
+      particleMap[trackIt->GetMCID()]->SetdEdx(TrackdEdx(*trackIt, 100.));
       particleMap[trackIt->GetMCID()]->SetLength(TrackLength(*trackIt));
-      //particleMap[trackIt->GetMCID()]->SetDirection(TrackDirection(*trackIt));
+      particleMap[trackIt->GetMCID()]->SetDirection(TrackDirection(*trackIt));
       particleMap[trackIt->GetMCID()]->SetStart(TrackStart(*trackIt));
       particleMap[trackIt->GetMCID()]->SetEnd(TrackEnd(*trackIt));
-      particleMap[trackIt->GetMCID()]->SetVertexFraction(TrackVertexFraction(*trackIt, eventVertex));
-      eventEnergy += trackEnergy;
-      familyEnergy[particleAncestry[trackIt->GetMCID()]] += trackEnergy;
-      std::vector<MCHit> trackHits = trackIt->MCHitContainer;
+      eventEnergy += TrackDepositedEnergy(*trackIt);
+      std::vector<MCHit> trackHits = track.MCHitContainer;
       for (std::vector<MCHit>::const_iterator trackHitIt = trackHits.begin();
-      	   trackHitIt != trackHits.end();
-      	   ++trackHitIt)
-      	hits.push_back(*trackHitIt);
+	   trackHitIt != trackHits.end();
+	   ++trackHitIt)
+	trackHits.push_back(*trackHitIt);
     }
-
-    // Set family energy
-    for (std::map<int, Particle*>::iterator particleIt = particleMap.begin(); particleIt != particleMap.end(); ++particleIt)
-      particleIt->second->SetFamilyEnergy(familyEnergy[particleIt->second->ID()]);
 
     // Save all information about the trident candidate event
     TridentMuMu tridentMuMu;
-    tridentMuMu.SetEventNumber(event);
     tridentMuMu.SetEventEnergy(eventEnergy);
     tridentMuMu.SetEventVertex(eventVertex);
 
     // Look through hits
-    double vertexActivity = 0., vertexFraction = 0.;
-    std::vector<double> vertexDepEnergy(40, 0.);
-    TVector3 pos;
-    double hitEnergy, vertexDist;
-    for (std::vector<MCHit>::const_iterator hitIt = hits.begin(); hitIt != hits.end(); ++hitIt) {
-      pos = hitIt->GetStartPositionAndTime().Vect();
-      hitEnergy = hitIt->GetEnergyDeposit();
-      vertexDist = (pos-eventVertex).Mag();
-      if (vertexDist < 50.)
-	vertexActivity += hitEnergy;
-      if (vertexDist < 200.)
-	vertexDepEnergy[vertexDist/5] += hitEnergy;
+    double vertexActivity = 0.;
+    for (std::vector<MCHit>::const_iterator hitIt = hits.begin(); hitIt != hits.end; ++hitIt) {
+      TVector3 pos = hitIt->GetInitialPositionAndTime().Vect();
+      if ((pos-eventVertex).Mag() < 5.)
+	vertexActivity += hitIt->GetEnergyDeposit();
       if (kMakeMonitorHists) {
-	((TH1D*)monitorHists->FindObject(Form("VertexEnergy%s", fSigLabel)))->Fill(vertexDist, hitEnergy);
-	// ((TH2D*)monitorHists->FindObject(Form("VertexActivity%s", sig)))->Fill(vertexDist, hitEnergy);
-	// ((TGraph*)monitorHists->FindObject(Form("gVertexActivity%s", sig)))
-	//   ->SetPoint(((TGraph*)monitorHists->FindObject(Form("gVertexActivity%s", sig)))->GetN(),
-	// 	     vertexDist, hitEnergy);
+	if (label == "Signal") {
+	  ((TH2D*)monitorHists->FindObject("VertexActivitySig"))->Fill((pos-eventVertex).Mag(), hitIt->GetEnergyDeposit());
+	  ((TGraph*)monitorHists->FindObject("VertexActivitySig"))
+	    ->SetPoint(monitorHists->FindObject("VertexActivitySig")->GetN(), (pos-eventVertex).Mag(), hitIt->GetEnergyDeposit());
+	} else {
+	  ((TH2D*)monitorHists->FindObject("VertexActivityBg:"))->Fill((pos-eventVertex).Mag(), hitIt->GetEnergyDeposit());
+	  ((TGraph*)monitorHists->FindObject("VertexActivityBg"))
+	    ->SetPoint(monitorHists->FindObject("VertexActivityBg")->GetN(), (pos-eventVertex).Mag(), hitIt->GetEnergyDeposit());
+	}
       }
     }
-    if (kMakeMonitorHists)
-      for (unsigned int bin = 0; bin < 40; ++bin)
-	((TProfile*)monitorHists->FindObject(Form("VertexEnergyFrac%s", fSigLabel)))->Fill(bin*5., vertexDepEnergy[bin]/eventEnergy);
-    vertexFraction = vertexActivity / eventEnergy;
-    tridentMuMu.SetVertexActivity(vertexActivity);
-    tridentMuMu.SetVertexFraction(vertexFraction);
+    tridentMuMu->SetVertexActivity(vertexActivity);
 
     // Look through particles
     std::map<double, Particle*> particleLength;
     for (std::map<int,Particle*>::const_iterator particleIt = particleMap.begin();
 	 particleIt != particleMap.end();
 	 ++particleIt) {
-
-      //std::cout << "Particle deposited energy " << particleIt->second->DepositedEnergy() << ", family energy " << particleIt->second->FamilyEnergy() << std::endl;
 
       // Signal info
       if (label == "Signal") {
@@ -518,27 +404,37 @@ std::vector<std::unique_ptr<TridentMuMu> > ProcessEvents(TTree* tree,
 	  tridentMuMu.AddMuMinus(*(particleIt->second));
       }
 
-      // Selection info
-      //if (particleIt->second->AssociatedTrack() and particleIt->second->Length() > 500 and particleIt->second->DepositedEnergy() > 100)
-      if (particleIt->second->AssociatedTrack() and particleIt->second->Length() > 20 and particleIt->second->FamilyEnergy() > 100)
-	tridentMuMu.AddTrack(*(particleIt->second));
-
       particleLength[particleIt->second->Length()] = particleIt->second;
+
+      // Selection info
+      if (particleIt->second->AssociatedTrack() and particleIt->second->Length() > 50 and particleIt->second->Energy() > 100)
+	tridentMuMu.AddIdentifiedMu(*(particleIt->second));
 
     }
 
-    // if (kMakeMonitorHists and particleLength.size() >= 2) {
-    //   Particle* longestParticle = particleLength.rbegin()->second;
-    //   Particle* nextLongestParticle = std::next(particleLength.rbegin())->second;
-    //   ((TH1D*)monitorHists->FindObject(Form("TrackLength%s", fSigLabel)))->Fill(longestParticle->Length());
-    //   ((TH1D*)monitorHists->FindObject(Form("TrackLength%s", fSigLabel)))->Fill(nextLongestParticle->Length());
-    //   ((TH1D*)monitorHists->FindObject(Form("TrackEnergy%s", fSigLabel)))->Fill(longestParticle->DepositedEnergy());
-    //   ((TH1D*)monitorHists->FindObject(Form("TrackEnergy%s", fSigLabel)))->Fill(nextLongestParticle->DepositedEnergy());
-    //   ((TH1D*)monitorHists->FindObject(Form("LongTrackLength%s", fSigLabel)))->Fill(longestParticle->Length());
-    //   ((TH1D*)monitorHists->FindObject(Form("LongTrackEnergy%s", fSigLabel)))->Fill(longestParticle->DepositedEnergy());
-    //   ((TH1D*)monitorHists->FindObject(Form("ShortTrackLength%s", fSigLabel)))->Fill(nextLongestParticle->Length());
-    //   ((TH1D*)monitorHists->FindObject(Form("ShortTrackEnergy%s", fSigLabel)))->Fill(nextLongestParticle->DepositedEnergy());
-    // }
+    if (kMakeMonitorHists and particleLength.size() >= 2) {
+      Particle* longestParticle = particleLength.rbegin()->second;
+      Particle* nextLongestParticle = std::next(particleLength.rbegin())->second;
+      if (label == "Signal") {
+	((TH1D*)monitorHists->FindObject("TrackLengthSig"))->Fill(longestParticle->Length());
+	((TH1D*)monitorHists->FindObject("TrackLengthSig"))->Fill(nextLongestParticle->Length());
+	((TH1D*)monitorHists->FindObject("TrackEnergySig"))->Fill(longestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("TrackEnergySig"))->Fill(nextLongestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("LongTrackLengthSig"))->Fill(longestParticle->Length());
+	((TH1D*)monitorHists->FindObject("LongTrackEnergySig"))->Fill(longestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("ShortTrackLengthSig"))->Fill(nextLongestParticle->Length());
+	((TH1D*)monitorHists->FindObject("ShortTrackEnergySig"))->Fill(nextLongestParticle->DepositedEnergy());
+      } else {
+	((TH1D*)monitorHists->FindObject("TrackLengthBg"))->Fill(longestParticle->Length());
+	((TH1D*)monitorHists->FindObject("TrackLengthBg"))->Fill(nextLongestParticle->Length());
+	((TH1D*)monitorHists->FindObject("TrackEnergyBg"))->Fill(longestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("TrackEnergyBg"))->Fill(nextLongestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("LongTrackLengthBg"))->Fill(longestParticle->Length());
+	((TH1D*)monitorHists->FindObject("LongTrackEnergyBg"))->Fill(longestParticle->DepositedEnergy());
+	((TH1D*)monitorHists->FindObject("ShortTrackLengthBg"))->Fill(nextLongestParticle->Length());
+	((TH1D*)monitorHists->FindObject("ShortTrackEnergyBg"))->Fill(nextLongestParticle->DepositedEnergy());
+      }
+    }
 
     tridentMuMus.push_back(std::make_unique<TridentMuMu>(tridentMuMu));
 
@@ -559,16 +455,10 @@ double TrackLength(const MCTrack& track) {
   std::vector<MCHit> trackHits = track.MCHitContainer;
   MCHit firstHit = *trackHits.begin();
   MCHit lastHit = *trackHits.rbegin();
-  double trackLength_simple = (firstHit.GetStartPositionAndTime().Vect() - lastHit.GetStopPositionAndTime().Vect()).Mag();
 
-  double trackLength = 0.;
-  for (std::vector<MCHit>::const_iterator hitIt = trackHits.begin(); hitIt != trackHits.end(); ++hitIt) {
-    if (hitIt != trackHits.begin())
-      trackLength += (hitIt->GetStartPositionAndTime().Vect() - std::next(hitIt, -1)->GetStopPositionAndTime().Vect()).Mag();
-    trackLength += (hitIt->GetStopPositionAndTime().Vect() - hitIt->GetStartPositionAndTime().Vect()).Mag();
-  }
+  double trackLength = (firstHit.GetStartPositionAndTime().Vect() - lastHit.GetStopPositionAndTime().Vect()).Mag();
 
-  return trackLength;
+  return trackLength/10.;
 
 }
 
@@ -632,9 +522,9 @@ TVector3 TrackEnd(const MCTrack& track) {
 TVector3 TrackDirection(const MCTrack& track) {
 
   TVector3 direction;
-
+  
   std::vector<MCHit> trackHits = track.MCHitContainer;
-
+  
   if (trackHits.size() < 2)
     direction = TVector3(-999.,-999.,-999.);
 
@@ -654,19 +544,6 @@ TVector3 TrackDirection(const MCTrack& track) {
 
 }
 
-double TrackVertexFraction(const MCTrack& track, const TVector3& vertex) {
-
-  std::vector<MCHit> trackHits = track.MCHitContainer;
-
-  double vertexEnergy = 0.;
-  for (std::vector<MCHit>::const_iterator trackHitIt = trackHits.begin(); trackHitIt != trackHits.end(); ++trackHitIt)
-    if ((trackHitIt->GetStartPositionAndTime().Vect()-vertex).Mag() < 50.)
-      vertexEnergy += trackHitIt->GetEnergyDeposit();
-
-  return vertexEnergy/TrackDepositedEnergy(track);
-
-}
-
 void WriteData(std::string outFile,
 	       const std::map<std::string,std::vector<std::unique_ptr<TridentMuMu> > >& tridents,
 	       TObjArray* monitorHists) {
@@ -681,13 +558,10 @@ void WriteData(std::string outFile,
     TTree* outT = new TTree(("TridentMuMu"+allTridentIt->first).c_str(), "");//,"TridentMuMu"+tridentIt->first);
 
     // Tree variables
-    int tEvent;
     TridentMuMu tTridentMuMu;
     double tEventEnergy;
-    int tNumTracks;
+    int tNumIdentifiedMus;
     int tNumParticles;
-    double tVertexActivity;
-    double tVertexFraction;
     // Nu
     int tNuID, tNuPDG;
     double tNuStartX, tNuStartY, tNuStartZ;
@@ -695,64 +569,47 @@ void WriteData(std::string outFile,
     // Particles
     int tID[kMaxParticles], tPDG[kMaxParticles];
     double tEnergy[kMaxParticles], tdEdx[kMaxParticles],
-      tLength[kMaxParticles], tVertexFrac[kMaxParticles],
+      tLength[kMaxParticles],
       tDirectionX[kMaxParticles], tDirectionY[kMaxParticles], tDirectionZ[kMaxParticles],
       tStartX[kMaxParticles], tStartY[kMaxParticles], tStartZ[kMaxParticles],
-      tEndX[kMaxParticles], tEndY[kMaxParticles], tEndZ[kMaxParticles],
-      tInitMomX[kMaxParticles], tInitMomY[kMaxParticles], tInitMomZ[kMaxParticles],
-      tFinalMomX[kMaxParticles], tFinalMomY[kMaxParticles], tFinalMomZ[kMaxParticles];
+      tEndX[kMaxParticles], tEndY[kMaxParticles], tEndZ[kMaxParticles];
     // Mu plus (true)
     int tMuPlusID, tMuPlusPDG;
     double tMuPlusEnergy, tMuPlusdEdx,
-      tMuPlusFamilyEnergy,
-      tMuPlusLength, tMuPlusVertexFrac,
+      tMuPlusLength,
       tMuPlusDirectionX, tMuPlusDirectionY, tMuPlusDirectionZ,
       tMuPlusStartX, tMuPlusStartY, tMuPlusStartZ,
-      tMuPlusEndX, tMuPlusEndY, tMuPlusEndZ,
-      tMuPlusInitMomX, tMuPlusInitMomY, tMuPlusInitMomZ,
-      tMuPlusFinalMomX, tMuPlusFinalMomY, tMuPlusFinalMomZ;
+      tMuPlusEndX, tMuPlusEndY, tMuPlusEndZ;
     // Mu minus (true)
     int tMuMinusID, tMuMinusPDG;
     double tMuMinusEnergy, tMuMinusdEdx,
-      tMuMinusFamilyEnergy,
-      tMuMinusLength, tMuMinusVertexFrac,
+      tMuMinusLength,
       tMuMinusDirectionX, tMuMinusDirectionY, tMuMinusDirectionZ,
       tMuMinusStartX, tMuMinusStartY, tMuMinusStartZ,
-      tMuMinusEndX, tMuMinusEndY, tMuMinusEndZ,
-      tMuMinusInitMomX, tMuMinusInitMomY, tMuMinusInitMomZ,
-      tMuMinusFinalMomX, tMuMinusFinalMomY, tMuMinusFinalMomZ;
+      tMuMinusEndX, tMuMinusEndY, tMuMinusEndZ;
     // Short muon (selected)
     int tShortMuonID, tShortMuonPDG;
     double tShortMuonEnergy, tShortMuondEdx,
-      tShortMuonFamilyEnergy,
-      tShortMuonLength, tShortMuonVertexFrac,
+      tShortMuonLength,
       tShortMuonDirectionX, tShortMuonDirectionY, tShortMuonDirectionZ,
       tShortMuonStartX, tShortMuonStartY, tShortMuonStartZ,
-      tShortMuonEndX, tShortMuonEndY, tShortMuonEndZ,
-      tShortMuonInitMomX, tShortMuonInitMomY, tShortMuonInitMomZ,
-      tShortMuonFinalMomX, tShortMuonFinalMomY, tShortMuonFinalMomZ;
+      tShortMuonEndX, tShortMuonEndY, tShortMuonEndZ;
     // Long muon (selected)
     int tLongMuonID, tLongMuonPDG;
     double tLongMuonEnergy, tLongMuondEdx,
-      tLongMuonFamilyEnergy,
-      tLongMuonLength, tLongMuonVertexFrac,
+      tLongMuonLength,
       tLongMuonDirectionX, tLongMuonDirectionY, tLongMuonDirectionZ,
       tLongMuonStartX, tLongMuonStartY, tLongMuonStartZ,
-      tLongMuonEndX, tLongMuonEndY, tLongMuonEndZ,
-      tLongMuonInitMomX, tLongMuonInitMomY, tLongMuonInitMomZ,
-      tLongMuonFinalMomX, tLongMuonFinalMomY, tLongMuonFinalMomZ;
+      tLongMuonEndX, tLongMuonEndY, tLongMuonEndZ;
     // Selected muons
-    double tAngle, tFrontSeparation, tBackSeparation, tAngle_s;
+    double tAngle, tFrontSeparation, tBackSeparation;
 
     // Set branch vars
     // Event
-    //outT->Branch("TridentMuMu",      tTridentMuMu);
-    outT->Branch("Event",          &tEvent);
-    outT->Branch("EventEnergy",    &tEventEnergy);
-    outT->Branch("NumTracks",      &tNumTracks);
-    outT->Branch("NumParticles",   &tNumParticles);
-    outT->Branch("VertexActivity", &tVertexActivity);
-    outT->Branch("VertexFraction", &tVertexFraction);
+    //outT->Branch("TridentMuMu",        tTridentMuMu);
+    outT->Branch("EventEnergy",      &tEventEnergy);
+    outT->Branch("NumIdentifiedMus", &tNumIdentifiedMus);
+    outT->Branch("NumParticles",     &tNumParticles);
     // Nu
     outT->Branch("NuID",         &tNuID);
     outT->Branch("NuPDG",        &tNuPDG);
@@ -768,7 +625,6 @@ void WriteData(std::string outFile,
     outT->Branch("Energy",     &tEnergy,     "PDG[NumParticles]/F");
     outT->Branch("dEdx",       &tdEdx,       "dEdx[NumParticles]/F");
     outT->Branch("Length",     &tLength,     "Length[NumParticles]/F");
-    outT->Branch("VertexFrac", &tVertexFrac, "VertexFrac[NumParticles]/F");
     outT->Branch("DirectionX", &tDirectionX, "MuPlusDirectionX[NumParticles]/F");
     outT->Branch("DirectionY", &tDirectionY, "MuPlusDirectionY[NumParticles]/F");
     outT->Branch("DirectionZ", &tDirectionZ, "MuPlusDirectionZ[NumParticles]/F");
@@ -778,20 +634,12 @@ void WriteData(std::string outFile,
     outT->Branch("EndX",       &tEndX,       "MuPlusEndX[NumParticles]/F");
     outT->Branch("EndY",       &tEndY,       "MuPlusEndY[NumParticles]/F");
     outT->Branch("EndZ",       &tEndZ,       "MuPlusEndZ[NumParticles]/F");
-    outT->Branch("InitMomX",   &tInitMomX,   "MuPlusInitMomX[NumParticles]/F");
-    outT->Branch("InitMomY",   &tInitMomY,   "MuPlusInitMomY[NumParticles]/F");
-    outT->Branch("InitMomZ",   &tInitMomZ,   "MuPlusInitMomZ[NumParticles]/F");
-    outT->Branch("FinalMomX",  &tFinalMomX,  "MuPlusFinalMomX[NumParticles]/F");
-    outT->Branch("FinalMomY",  &tFinalMomY,  "MuPlusFinalMomY[NumParticles]/F");
-    outT->Branch("FinalMomZ",  &tFinalMomZ,  "MuPlusFinalMomZ[NumParticles]/F");
     // Mu plus (true)
     outT->Branch("MuPlusID",         &tMuPlusID);
     outT->Branch("MuPlusPDG",        &tMuPlusPDG);
     outT->Branch("MuPlusEnergy",     &tMuPlusEnergy);
     outT->Branch("MuPlusdEdx",       &tMuPlusdEdx);
-    outT->Branch("MuPlusFamilyEnergy", &tMuPlusFamilyEnergy);
     outT->Branch("MuPlusLength",     &tMuPlusLength);
-    outT->Branch("MuPlusVertexFrac", &tMuPlusVertexFrac);
     outT->Branch("MuPlusDirectionX", &tMuPlusDirectionX);
     outT->Branch("MuPlusDirectionY", &tMuPlusDirectionY);
     outT->Branch("MuPlusDirectionZ", &tMuPlusDirectionZ);
@@ -801,20 +649,12 @@ void WriteData(std::string outFile,
     outT->Branch("MuPlusEndX",       &tMuPlusEndX);
     outT->Branch("MuPlusEndY",       &tMuPlusEndY);
     outT->Branch("MuPlusEndZ",       &tMuPlusEndZ);
-    outT->Branch("MuPlusInitMomX",   &tMuPlusInitMomX);
-    outT->Branch("MuPlusInitMomY",   &tMuPlusInitMomY);
-    outT->Branch("MuPlusInitMomZ",   &tMuPlusInitMomZ);
-    outT->Branch("MuPlusFinalMomX",  &tMuPlusFinalMomX);
-    outT->Branch("MuPlusFinalMomY",  &tMuPlusFinalMomY);
-    outT->Branch("MuPlusFinalMomZ",  &tMuPlusFinalMomZ);
     // Mu minus (true)
     outT->Branch("MuMinusID",         &tMuMinusID);
     outT->Branch("MuMinusPDG",        &tMuMinusPDG);
     outT->Branch("MuMinusEnergy",     &tMuMinusEnergy);
     outT->Branch("MuMinusdEdx",       &tMuMinusdEdx);
-    outT->Branch("MuMinusFamilyEnergy", &tMuMinusFamilyEnergy);
     outT->Branch("MuMinusLength",     &tMuMinusLength);
-    outT->Branch("MuMinusVertexFrac", &tMuMinusVertexFrac);
     outT->Branch("MuMinusDirectionX", &tMuMinusDirectionX);
     outT->Branch("MuMinusDirectionY", &tMuMinusDirectionY);
     outT->Branch("MuMinusDirectionZ", &tMuMinusDirectionZ);
@@ -824,20 +664,12 @@ void WriteData(std::string outFile,
     outT->Branch("MuMinusEndX",       &tMuMinusEndX);
     outT->Branch("MuMinusEndY",       &tMuMinusEndY);
     outT->Branch("MuMinusEndZ",       &tMuMinusEndZ);
-    outT->Branch("MuMinusInitMomX",   &tMuMinusInitMomX);
-    outT->Branch("MuMinusInitMomY",   &tMuMinusInitMomY);
-    outT->Branch("MuMinusInitMomZ",   &tMuMinusInitMomZ);
-    outT->Branch("MuMinusFinalMomX",  &tMuMinusFinalMomX);
-    outT->Branch("MuMinusFinalMomY",  &tMuMinusFinalMomY);
-    outT->Branch("MuMinusFinalMomZ",  &tMuMinusFinalMomZ);
-    // Short muon (selected)
+    // Short muon (selected )
     outT->Branch("ShortMuonID",         &tShortMuonID);
     outT->Branch("ShortMuonPDG",        &tShortMuonPDG);
     outT->Branch("ShortMuonEnergy",     &tShortMuonEnergy);
     outT->Branch("ShortMuondEdx",       &tShortMuondEdx);
-    outT->Branch("ShortMuonFamilyEnergy", &tShortMuonFamilyEnergy);
     outT->Branch("ShortMuonLength",     &tShortMuonLength);
-    outT->Branch("ShortMuonVertexFrac", &tShortMuonVertexFrac);
     outT->Branch("ShortMuonDirectionX", &tShortMuonDirectionX);
     outT->Branch("ShortMuonDirectionY", &tShortMuonDirectionY);
     outT->Branch("ShortMuonDirectionZ", &tShortMuonDirectionZ);
@@ -847,20 +679,12 @@ void WriteData(std::string outFile,
     outT->Branch("ShortMuonEndX",       &tShortMuonEndX);
     outT->Branch("ShortMuonEndY",       &tShortMuonEndY);
     outT->Branch("ShortMuonEndZ",       &tShortMuonEndZ);
-    outT->Branch("ShortMuonInitMomX",   &tShortMuonInitMomX);
-    outT->Branch("ShortMuonInitMomY",   &tShortMuonInitMomY);
-    outT->Branch("ShortMuonInitMomZ",   &tShortMuonInitMomZ);
-    outT->Branch("ShortMuonFinalMomX",  &tShortMuonFinalMomX);
-    outT->Branch("ShortMuonFinalMomY",  &tShortMuonFinalMomY);
-    outT->Branch("ShortMuonFinalMomZ",  &tShortMuonFinalMomZ);
     // Long muon (selected)
     outT->Branch("LongMuonID",         &tLongMuonID);
     outT->Branch("LongMuonPDG",        &tLongMuonPDG);
     outT->Branch("LongMuonEnergy",     &tLongMuonEnergy);
     outT->Branch("LongMuondEdx",       &tLongMuondEdx);
-    outT->Branch("LongMuonFamilyEnergy", &tLongMuonFamilyEnergy);
     outT->Branch("LongMuonLength",     &tLongMuonLength);
-    outT->Branch("LongMuonVertexFrac", &tLongMuonVertexFrac);
     outT->Branch("LongMuonDirectionX", &tLongMuonDirectionX);
     outT->Branch("LongMuonDirectionY", &tLongMuonDirectionY);
     outT->Branch("LongMuonDirectionZ", &tLongMuonDirectionZ);
@@ -870,15 +694,8 @@ void WriteData(std::string outFile,
     outT->Branch("LongMuonEndX",       &tLongMuonEndX);
     outT->Branch("LongMuonEndY",       &tLongMuonEndY);
     outT->Branch("LongMuonEndZ",       &tLongMuonEndZ);
-    outT->Branch("LongMuonInitMomX",   &tLongMuonInitMomX);
-    outT->Branch("LongMuonInitMomY",   &tLongMuonInitMomY);
-    outT->Branch("LongMuonInitMomZ",   &tLongMuonInitMomZ);
-    outT->Branch("LongMuonFinalMomX",  &tLongMuonFinalMomX);
-    outT->Branch("LongMuonFinalMomY",  &tLongMuonFinalMomY);
-    outT->Branch("LongMuonFinalMomZ",  &tLongMuonFinalMomZ);
     // Selected muons
     outT->Branch("Angle",           &tAngle);
-    outT->Branch("Angle_s",         &tAngle_s);
     outT->Branch("FrontSeparation", &tFrontSeparation);
     outT->Branch("BackSeparation",  &tBackSeparation);
 
@@ -888,21 +705,18 @@ void WriteData(std::string outFile,
 	 ++tridentIt) {
 
       //tTridentMuMu = *(*tridentIt).release();
-      tEvent = (*tridentIt)->GetEventNumber();
       tEventEnergy = (*tridentIt)->GetEventEnergy();
-      tNumTracks = (*tridentIt)->NumTracks();
-      tVertexActivity = (*tridentIt)->GetVertexActivity();
-      tVertexFraction = (*tridentIt)->GetVertexFraction();
+      tNumIdentifiedMus = (*tridentIt)->NumIdentifiedMus();
 
       // Get particle objects
       Particle nu = (*tridentIt)->GetNu();
-      std::vector<Particle> mus = (*tridentIt)->GetTracks();
+      std::vector<Particle> mus = (*tridentIt)->GetIdentifiedMus();
       Particle muPlus = (*tridentIt)->GetMuPlus();
       Particle muMinus = (*tridentIt)->GetMuMinus();
 
       Particle longMuon, shortMuon;
-      if (tNumTracks > 1) {
-	// In the instance of multiple tracks, need to pick two
+      if (tNumIdentifiedMus > 1) {
+	// In the instance of multiple identified muons, need to pick two
 	// Right now, take the longest track
 	std::map<double,Particle> muLength;
 	for (std::vector<Particle>::iterator muIt = mus.begin(); muIt != mus.end(); ++muIt)
@@ -911,7 +725,7 @@ void WriteData(std::string outFile,
 	longMuon = muIt->second;
 	shortMuon = std::next(muIt)->second;
       }
-      else if (tNumTracks == 1)
+      else if (tNumIdentifiedMus == 1)
 	longMuon = mus.at(0);
 
       tNuID         = nu.ID();
@@ -927,11 +741,9 @@ void WriteData(std::string outFile,
 
       tMuPlusID         = muPlus.ID();
       tMuPlusPDG        = muPlus.PDG();
-      tMuPlusEnergy     = muPlus.DepositedEnergy();
+      tMuPlusEnergy     = muPlus.Energy();
       tMuPlusdEdx       = muPlus.dEdx();
-      tMuPlusFamilyEnergy = muPlus.FamilyEnergy();
       tMuPlusLength     = muPlus.Length();
-      tMuPlusVertexFrac = muPlus.VertexFraction();
       tMuPlusDirectionX = muPlus.Direction().X();
       tMuPlusDirectionY = muPlus.Direction().Y();
       tMuPlusDirectionZ = muPlus.Direction().Z();
@@ -941,20 +753,12 @@ void WriteData(std::string outFile,
       tMuPlusEndX       = muPlus.End().X();
       tMuPlusEndY       = muPlus.End().Y();
       tMuPlusEndZ       = muPlus.End().Z();
-      tMuPlusInitMomX   = muPlus.InitialMomentum().X();
-      tMuPlusInitMomY   = muPlus.InitialMomentum().Y();
-      tMuPlusInitMomZ   = muPlus.InitialMomentum().Z();
-      tMuPlusFinalMomX  = muPlus.FinalMomentum().X();
-      tMuPlusFinalMomY  = muPlus.FinalMomentum().Y();
-      tMuPlusFinalMomZ  = muPlus.FinalMomentum().Z();
 
       tMuMinusID         = muMinus.ID();
       tMuMinusPDG        = muMinus.PDG();
-      tMuMinusEnergy     = muMinus.DepositedEnergy();
+      tMuMinusEnergy     = muMinus.Energy();
       tMuMinusdEdx       = muMinus.dEdx();
-      tMuMinusFamilyEnergy = muMinus.FamilyEnergy();
       tMuMinusLength     = muMinus.Length();
-      tMuMinusVertexFrac = muMinus.VertexFraction();
       tMuMinusDirectionX = muMinus.Direction().X();
       tMuMinusDirectionY = muMinus.Direction().Y();
       tMuMinusDirectionZ = muMinus.Direction().Z();
@@ -964,20 +768,12 @@ void WriteData(std::string outFile,
       tMuMinusEndX       = muMinus.End().X();
       tMuMinusEndY       = muMinus.End().Y();
       tMuMinusEndZ       = muMinus.End().Z();
-      tMuMinusInitMomX   = muMinus.InitialMomentum().X();
-      tMuMinusInitMomY   = muMinus.InitialMomentum().Y();
-      tMuMinusInitMomZ   = muMinus.InitialMomentum().Z();
-      tMuMinusFinalMomX  = muMinus.FinalMomentum().X();
-      tMuMinusFinalMomY  = muMinus.FinalMomentum().Y();
-      tMuMinusFinalMomZ  = muMinus.FinalMomentum().Z();
 
       tLongMuonID         = longMuon.ID();
       tLongMuonPDG        = longMuon.PDG();
-      tLongMuonEnergy     = longMuon.DepositedEnergy();
+      tLongMuonEnergy     = longMuon.Energy();
       tLongMuondEdx       = longMuon.dEdx();
-      tLongMuonFamilyEnergy = longMuon.FamilyEnergy();
       tLongMuonLength     = longMuon.Length();
-      tLongMuonVertexFrac = longMuon.VertexFraction();
       tLongMuonDirectionX = longMuon.Direction().X();
       tLongMuonDirectionY = longMuon.Direction().Y();
       tLongMuonDirectionZ = longMuon.Direction().Z();
@@ -987,20 +783,12 @@ void WriteData(std::string outFile,
       tLongMuonEndX       = longMuon.End().X();
       tLongMuonEndY       = longMuon.End().Y();
       tLongMuonEndZ       = longMuon.End().Z();
-      tLongMuonInitMomX   = longMuon.InitialMomentum().X();
-      tLongMuonInitMomY   = longMuon.InitialMomentum().Y();
-      tLongMuonInitMomZ   = longMuon.InitialMomentum().Z();
-      tLongMuonFinalMomX  = longMuon.FinalMomentum().X();
-      tLongMuonFinalMomY  = longMuon.FinalMomentum().Y();
-      tLongMuonFinalMomZ  = longMuon.FinalMomentum().Z();
 
       tShortMuonID         = shortMuon.ID();
       tShortMuonPDG        = shortMuon.PDG();
-      tShortMuonEnergy     = shortMuon.DepositedEnergy();
+      tShortMuonEnergy     = shortMuon.Energy();
       tShortMuondEdx       = shortMuon.dEdx();
-      tShortMuonFamilyEnergy = shortMuon.FamilyEnergy();
       tShortMuonLength     = shortMuon.Length();
-      tShortMuonVertexFrac = shortMuon.VertexFraction();
       tShortMuonDirectionX = shortMuon.Direction().X();
       tShortMuonDirectionY = shortMuon.Direction().Y();
       tShortMuonDirectionZ = shortMuon.Direction().Z();
@@ -1010,17 +798,9 @@ void WriteData(std::string outFile,
       tShortMuonEndX       = shortMuon.End().X();
       tShortMuonEndY       = shortMuon.End().Y();
       tShortMuonEndZ       = shortMuon.End().Z();
-      tShortMuonInitMomX   = shortMuon.InitialMomentum().X();
-      tShortMuonInitMomY   = shortMuon.InitialMomentum().Y();
-      tShortMuonInitMomZ   = shortMuon.InitialMomentum().Z();
-      tShortMuonFinalMomX  = shortMuon.FinalMomentum().X();
-      tShortMuonFinalMomY  = shortMuon.FinalMomentum().Y();
-      tShortMuonFinalMomZ  = shortMuon.FinalMomentum().Z();
 
       tAngle = longMuon.Direction().
 	Angle(shortMuon.Direction()) * 180/TMath::Pi();
-      tAngle_s = (longMuon.End()-longMuon.Start()).Unit().
-	Angle((shortMuon.End()-shortMuon.Start()).Unit()) * 180/TMath::Pi();
       tFrontSeparation = (longMuon.Start()-
 			  shortMuon.Start()).Mag();
       tBackSeparation = (longMuon.End()-
@@ -1037,11 +817,9 @@ void WriteData(std::string outFile,
   } // signal/bg
 
   // Write out all the monitor hists
-  if (monitorHists) {
-    outF->cd();
-    for (int obj = 0; obj < monitorHists->GetEntries(); ++obj)
-      monitorHists->At(obj)->Write();
-  }
+  outF->cd();
+  for (unsigned int obj = 0; obj < monitorHists->GetEntries(); ++obj)
+    monitorHists->At(obj)->Write();
 
   outF->Close();
   delete outF;
