@@ -55,7 +55,7 @@ const bool kMakeMonitorHists = true;
 const bool kSaveTree = true;
 
 // Selection options
-const float kVertexDistance = 100.;
+const float kVertexDifference = 100.;
 
 class TridentMuMu {
 public:
@@ -495,7 +495,7 @@ std::vector<std::unique_ptr<TridentMuMu> > ProcessEvents(TTree* tree,
       pos = hitIt->GetStartPositionAndTime().Vect();
       hitEnergy = hitIt->GetEnergyDeposit();
       vertexDist = (pos-eventVertex).Mag();
-      if (vertexDist < kVertexDistance)
+      if (vertexDist < kVertexDifference)
 	vertexActivity += hitEnergy;
       if (vertexDist < 200.)
 	vertexDepEnergy[vertexDist/5] += hitEnergy;
@@ -669,7 +669,7 @@ double TrackVertexFraction(const MCTrack& track, const TVector3& vertex) {
 
   double vertexEnergy = 0.;
   for (std::vector<MCHit>::const_iterator trackHitIt = trackHits.begin(); trackHitIt != trackHits.end(); ++trackHitIt)
-    if ((trackHitIt->GetStartPositionAndTime().Vect()-vertex).Mag() < kVertexDistance)
+    if ((trackHitIt->GetStartPositionAndTime().Vect()-vertex).Mag() < kVertexDifference)
       vertexEnergy += trackHitIt->GetEnergyDeposit();
 
   return vertexEnergy/TrackDepositedEnergy(track);

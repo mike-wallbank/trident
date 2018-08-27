@@ -39,7 +39,7 @@ void trident_mumu_plot() {
   //TFile* fileIn = new TFile("TridentMuMuOut_Current.root", "READ");
   //TFile* fileIn = new TFile("TridentMuMuOut_Small.root", "READ");
   TTree* treeSig = (TTree*)fileIn->Get("TridentMuMuSignal");
-  TTree* treeBg = (TTree*)fileIn->Get("TridentMuMuBackground");
+  //TTree* treeBg = (TTree*)fileIn->Get("TridentMuMuBackground");
 
   // Output file
   TFile* fileOut = new TFile("TridentMuMuPlots.root", "RECREATE");
